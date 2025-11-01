@@ -22,16 +22,7 @@ jest.mock('@dynatrace/automation-action-components', () => ({
         onChange(event.target.value);
       }}
     >
-      {React.Children.map(children, (child) => {
-        if (!React.isValidElement(child)) {
-          return null;
-        }
-        return (
-          <option value={child.props.value}>
-            {child.props.children}
-          </option>
-        );
-      })}
+      {children}
     </select>
   ),
   AutomationTextInput: ({ value, onChange }: { value?: string; onChange: (value?: string) => void }) => (
@@ -52,6 +43,7 @@ jest.mock('@dynatrace/strato-components-preview/forms', () => ({
   SelectV2: Object.assign(
     ({ children }: { children: React.ReactNode }) => <>{children}</>,
     {
+      Content: ({ children }: { children: React.ReactNode }) => <>{children}</>,
       Option: ({ value, children }: { value: string; children: React.ReactNode }) => (
         <option value={value}>{children}</option>
       ),
