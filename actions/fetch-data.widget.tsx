@@ -39,8 +39,10 @@ const FetchDataWidget: ActionWidget<FetchDataInput> = (props) => {
             }
           }}
         >
-          <SelectV2.Option value="GREATER_THAN">Greater than threshold</SelectV2.Option>
-          <SelectV2.Option value="LESS_THAN">Less than threshold</SelectV2.Option>
+          <SelectV2.Content>
+            <SelectV2.Option value="GREATER_THAN">Greater than threshold</SelectV2.Option>
+            <SelectV2.Option value="LESS_THAN">Less than threshold</SelectV2.Option>
+          </SelectV2.Content>
         </AutomationSelect>
         <Hint>Select how the number of returned records should be compared to the threshold.</Hint>
       </FormField>
