@@ -14,6 +14,37 @@ jest.mock('@dynatrace/automation-action-components', () => ({
       }}
     />
   ),
+  AutomationConnectionPicker: ({
+    connectionId,
+    onChange,
+    dataTestId,
+  }: {
+    connectionId?: string;
+    onChange: (value: string) => void;
+    dataTestId?: string;
+  }) => (
+    <select
+      aria-label="connection-picker"
+      data-testid={dataTestId}
+      value={connectionId ?? ''}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      <option value="">Select a connection</option>
+      <option value="connection-1">Connection 1</option>
+      <option value="connection-2">Connection 2</option>
+    </select>
+  ),
+  AutomationCodeEditor: ({
+    value,
+    onChange,
+    ariaLabel,
+  }: {
+    value?: string;
+    onChange: (value: string) => void;
+    ariaLabel?: string;
+  }) => (
+    <textarea aria-label={ariaLabel ?? 'code-editor'} value={value ?? ''} onChange={(event) => onChange(event.target.value)} />
+  ),
   AutomationSelect: ({ value, onChange, children }: { value: string; onChange: (value: string) => void; children: React.ReactNode }) => (
     <select
       aria-label="comparison"
@@ -50,6 +81,14 @@ jest.mock('@dynatrace/strato-components-preview/forms', () => ({
       Trigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     },
   ),
+  Checkbox: ({ checked, onChange, 'aria-label': ariaLabel }: { checked?: boolean; onChange: (checked: boolean) => void; 'aria-label'?: string }) => (
+    <input
+      type="checkbox"
+      aria-label={ariaLabel}
+      checked={Boolean(checked)}
+      onChange={(event) => onChange(event.target.checked)}
+    />
+  ),
 }));
 
 describe('FetchDataWidget', () => {
@@ -63,6 +102,10 @@ describe('FetchDataWidget', () => {
           comparison: 'LESS_THAN',
           threshold: 3,
           problemTitle: 'Alert title',
+          createProblem: true,
+          sendRequest: true,
+          connectionId: 'connection-2',
+          requestBodyTemplate: '{ "foo": "bar" }',
         }}
         onValueChanged={onValueChanged}
       />,
@@ -72,11 +115,19 @@ describe('FetchDataWidget', () => {
     const comparisonSelect = screen.getByLabelText('comparison') as HTMLSelectElement;
     const thresholdInput = screen.getByLabelText('threshold') as HTMLInputElement;
     const [titleInput] = screen.getAllByLabelText('text-input') as HTMLInputElement[];
+    const createProblemToggle = screen.getByLabelText('create-problem') as HTMLInputElement;
+    const sendRequestToggle = screen.getByLabelText('send-request') as HTMLInputElement;
+    const connectionPicker = screen.getByTestId('connection-picker') as HTMLSelectElement;
+    const requestBodyEditor = screen.getByLabelText('request-body-template') as HTMLTextAreaElement;
 
     expect(queryEditor.value).toBe('fetch logs');
     expect(comparisonSelect.value).toBe('LESS_THAN');
     expect(thresholdInput.value).toBe('3');
     expect(titleInput.value).toBe('Alert title');
+    expect(createProblemToggle.checked).toBe(true);
+    expect(sendRequestToggle.checked).toBe(true);
+    expect(connectionPicker.value).toBe('connection-2');
+    expect(requestBodyEditor.value).toBe('{ "foo": "bar" }');
   });
 
   it('updates the value when fields change', () => {
@@ -86,6 +137,10 @@ describe('FetchDataWidget', () => {
         comparison: 'GREATER_THAN' as const,
         threshold: 1,
         problemTitle: '',
+        createProblem: false,
+        sendRequest: false,
+        connectionId: 'connection-1',
+        requestBodyTemplate: '',
       });
       return <FetchDataWidget value={state} onValueChanged={setState} />;
     };
@@ -96,15 +151,27 @@ describe('FetchDataWidget', () => {
     const comparisonSelect = screen.getByLabelText('comparison') as HTMLSelectElement;
     const thresholdInput = screen.getByLabelText('threshold') as HTMLInputElement;
     const [titleInput] = screen.getAllByLabelText('text-input') as HTMLInputElement[];
+    const createProblemToggle = screen.getByLabelText('create-problem') as HTMLInputElement;
+    const sendRequestToggle = screen.getByLabelText('send-request') as HTMLInputElement;
+    const connectionPicker = screen.getByTestId('connection-picker') as HTMLSelectElement;
+    const requestBodyEditor = screen.getByLabelText('request-body-template') as HTMLTextAreaElement;
 
     fireEvent.change(queryEditor, { target: { value: 'fetch logs' } });
     fireEvent.change(comparisonSelect, { target: { value: 'LESS_THAN' } });
     fireEvent.change(thresholdInput, { target: { value: '5' } });
     fireEvent.change(titleInput, { target: { value: 'New problem title' } });
+    fireEvent.click(createProblemToggle);
+    fireEvent.click(sendRequestToggle);
+    fireEvent.change(connectionPicker, { target: { value: 'connection-2' } });
+    fireEvent.change(requestBodyEditor, { target: { value: '{ "new": "value" }' } });
 
     expect(queryEditor.value).toBe('fetch logs');
     expect(comparisonSelect.value).toBe('LESS_THAN');
     expect(thresholdInput.value).toBe('5');
     expect(titleInput.value).toBe('New problem title');
+    expect(createProblemToggle.checked).toBe(true);
+    expect(sendRequestToggle.checked).toBe(true);
+    expect(connectionPicker.value).toBe('connection-2');
+    expect(requestBodyEditor.value).toBe('{ "new": "value" }');
   });
 });
