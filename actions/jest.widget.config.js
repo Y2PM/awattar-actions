@@ -1,10 +1,5 @@
-
-
-const { stratoPreset } = require('@dynatrace/strato-components-preview/testing/jest');
-
 /** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
 module.exports = {
-  ...stratoPreset,
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   clearMocks: true,
@@ -13,11 +8,13 @@ module.exports = {
   roots: ['<rootDir>/actions'],
   testMatch: ['**/*.widget.test.tsx'],
   setupFiles: [
-    '@dynatrace/strato-components-preview/testing',
     '@dynatrace-sdk/user-preferences/testing',
     '@dynatrace-sdk/navigation/testing',
-    '@dynatrace-sdk/app-environment/testing'
+    '@dynatrace-sdk/app-environment/testing',
   ],
+  moduleNameMapper: {
+    '\\.(css|less|sass|scss)$': 'identity-obj-proxy',
+  },
   transform: {
     '^.+\\.(t|j)sx$': [
       'ts-jest',
