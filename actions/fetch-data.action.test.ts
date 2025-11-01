@@ -1,34 +1,44 @@
 import fetchData from './fetch-data.action';
 import { buildMockedFetchResponse } from './test-utils';
 
-describe('fetch-data', () => {
-  let fetchMock;
+describe('fetch-data action', () => {
+  const originalFetch = globalThis.fetch;
+  let fetchMock: jest.Mock;
 
   beforeEach(() => {
     fetchMock = jest.fn();
-    globalThis.fetch = fetchMock;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
   });
 
   afterEach(() => {
-    // Clean up the mock to prevent interference with other tests
-    fetchMock.mockClear();
+    globalThis.fetch = originalFetch;
   });
 
-    it('should produce expected results', async () => {
-      fetchMock.mockImplementation(() =>
-        buildMockedFetchResponse({
-          schemaId: 'fetch-data-connection',
-          value: {
-            name: 'My Connection',
-            token: 'abc123',
-            url: 'https://foo.bar',
-          },
-          summary: 'My Connection',
-        }),
-      );
+  it('should request the market data API with the expected query parameters', async () => {
+    const mockedResponse = [{ foo: 'bar' }];
 
-      const result = await fetchData({ name: 'Mark', connectionId: 'fetch-data-connection-object-id' });
-      expect(result).toEqual({ message: 'Hello Mark!' });
-      expect.assertions(1);
+    fetchMock.mockImplementation((requestUrl: string) => {
+      expect(requestUrl).toBe('https://api.awattar.de/v1/marketdata?start=1000&end=2000');
+      return buildMockedFetchResponse(mockedResponse);
+    });
+
+    const result = await fetchData({ start: '1000', end: '2000' });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result).toEqual(mockedResponse);
+  });
+
+  it('should omit missing query parameters', async () => {
+    const mockedResponse = { data: [] };
+
+    fetchMock.mockImplementation((requestUrl: string) => {
+      expect(requestUrl).toBe('https://api.awattar.de/v1/marketdata');
+      return buildMockedFetchResponse(mockedResponse);
+    });
+
+    const result = await fetchData({ start: undefined, end: undefined });
+
+    expect(fetchMock).toHaveBeenCalledWith('https://api.awattar.de/v1/marketdata');
+    expect(result).toEqual(mockedResponse);
   });
 });

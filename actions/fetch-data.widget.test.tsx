@@ -1,56 +1,43 @@
-import { render } from '@dynatrace/strato-components-preview-testing/jest';
-import { screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
-import { buildMockedFetchResponse } from './test-utils';
 import FetchDataWidget from './fetch-data.widget';
 
+jest.mock('@dynatrace/automation-action-components', () => ({
+  AutomationTextInput: ({ value, onChange }: { value?: string; onChange: (value?: string) => void }) => (
+    <input value={value ?? ''} onChange={(event) => onChange?.(event.target.value)} />
+  ),
+}));
+
+jest.mock('@dynatrace/strato-components-preview', () => ({
+  FormField: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Hint: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
+  Label: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
+
 describe('FetchDataWidget', () => {
-  let fetchMock;
+  it('should render start and end inputs with existing values', () => {
+    const onValueChanged = jest.fn();
 
-  beforeEach(() => {
-    fetchMock = jest.fn();
-    globalThis.fetch = fetchMock;
+    render(<FetchDataWidget value={{ start: '1000', end: '2000' }} onValueChanged={onValueChanged} />);
+
+    const [startInput, endInput] = screen.getAllByRole('textbox') as HTMLInputElement[];
+
+    expect(startInput.value).toBe('1000');
+    expect(endInput.value).toBe('2000');
+    expect(
+      screen.getAllByText('Optional - see https://www.awattar.de/services/api for details').length,
+    ).toBe(2);
   });
 
-  afterEach(() => {
-    // Clean up the mock to prevent interference with other tests
-    fetchMock.mockClear();
-  });
+  it('should notify about updates', () => {
+    const onValueChanged = jest.fn();
 
-  it('should render a widget with values', async () => {
-    fetchMock.mockImplementation((url: string) => {
-      if (url.startsWith('/platform/app-settings/v2/objects?')) {
-        return buildMockedFetchResponse({
-          items: [
-            {
-              objectId: 'fetch-data-connection-object-id',
-              summary: 'My Connection',
-            },
-          ],
-          totalCount: 1,
-          pageSize: 500,
-        });
-      } else if (
-        url === '/platform/app-settings/v2/objects/fetch-data-connection-object-id'
-      ) {
-        return buildMockedFetchResponse({
-          objectId: 'fetch-data-connection-object-id',
-          summary: 'My Connection',
-        });
-      } else {
-        return Promise.reject(new Error(`Unexpected fetch URL: ${url}`));
-      }
-    });
+    render(<FetchDataWidget value={{ start: '1000', end: undefined }} onValueChanged={onValueChanged} />);
 
-    render(
-      <FetchDataWidget
-        value={{ name: 'Mark', connectionId: 'fetch-data-connection-object-id' }}
-        onValueChanged={jest.fn()}
-      />,
-    );
+    const [startInput] = screen.getAllByRole('textbox') as HTMLInputElement[];
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(screen.getByText('Mark')).toBeTruthy();
-    expect(await screen.findByText('My Connection')).toBeTruthy();
+    fireEvent.change(startInput, { target: { value: '1234' } });
+
+    expect(onValueChanged).toHaveBeenCalledWith({ start: '1234', end: undefined });
   });
 });
