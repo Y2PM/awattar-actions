@@ -76,6 +76,10 @@ describe('fetch-data action', () => {
       body: expect.objectContaining({
         eventType: 'CUSTOM_ALERT',
         title: 'Logs alert',
+        properties: expect.objectContaining({
+          'dql.query': 'fetch logs',
+          'dt.event.description': expect.stringContaining('Query returned 10 record(s)'),
+        }),
       }),
     });
     expect(result).toEqual({
