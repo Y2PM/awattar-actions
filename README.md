@@ -48,4 +48,4 @@ You can find more information on how to use all the features of the new Dynatrac
 
 To learn React, check out the [React documentation](https://reactjs.org/).
 
-This repo was initially based on [the blog here] (https://www.dynatrace.com/news/blog/build-custom-workflow-actions-dynatrace-app-toolkit/).
+This repo was initially based on [the blog here](https://www.dynatrace.com/news/blog/build-custom-workflow-actions-dynatrace-app-toolkit/).
