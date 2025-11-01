@@ -151,10 +151,15 @@ describe('fetch-data action', () => {
     expect(mockedEventsClient.createEvent).toHaveBeenCalled();
   });
 
-  it('sends a POST request using the selected connection when sendRequest is enabled', async () => {
+  it('renders and POSTs the templated payload using the resolved connection credentials', async () => {
     mockedQueryClient.queryExecute.mockResolvedValue({
       state: 'SUCCEEDED',
-      result: buildResult(3),
+      result: {
+        ...buildResult(3),
+        metadata: {
+          timeframe: 'last_15_minutes',
+        },
+      },
     } as any);
 
     mockedAppSettingsClient.getAppSettingsObjectByObjectId.mockResolvedValue({
@@ -172,7 +177,8 @@ describe('fetch-data action', () => {
       comparison: 'GREATER_THAN',
       sendRequest: true,
       connectionId: 'connection-1',
-      requestBodyTemplate: '{"count": {{ recordsCount }}}',
+      requestBodyTemplate:
+        '{"count": {{ recordsCount }}, "threshold": {{ threshold }}, "timeframe": "{{ metadata.timeframe }}"}',
       createProblem: false,
     });
 
@@ -187,7 +193,11 @@ describe('fetch-data action', () => {
         Authorization: 'Bearer secret-token',
         'Content-Type': 'application/json',
       },
-      body: { count: 3 },
+      body: {
+        count: 3,
+        threshold: 1,
+        timeframe: 'last_15_minutes',
+      },
       requestBodyType: 'json',
     });
     expect(mockedEventsClient.createEvent).not.toHaveBeenCalled();
@@ -224,7 +234,18 @@ describe('fetch-data action', () => {
       createProblem: true,
     });
 
-    expect(mockedHttpClient.send).toHaveBeenCalled();
+    expect(mockedHttpClient.send).toHaveBeenCalledWith({
+      url: 'https://example.com/alert',
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer token-123',
+        'Content-Type': 'application/json',
+      },
+      body: {
+        records: 6,
+      },
+      requestBodyType: 'json',
+    });
     expect(mockedEventsClient.createEvent).toHaveBeenCalled();
     expect(result).toEqual({
       recordsCount: 6,
@@ -264,6 +285,46 @@ describe('fetch-data action', () => {
     expect(mockedEventsClient.createEvent).not.toHaveBeenCalled();
   });
 
+  it('throws an error when sendRequest is enabled without a connection ID', async () => {
+    mockedQueryClient.queryExecute.mockResolvedValue({
+      state: 'SUCCEEDED',
+      result: buildResult(4),
+    } as any);
+
+    await expect(
+      fetchData({
+        query: 'fetch logs',
+        threshold: 1,
+        comparison: 'GREATER_THAN',
+        sendRequest: true,
+        requestBodyTemplate: '{"count": {{ recordsCount }}}',
+      }),
+    ).rejects.toThrow('A connection ID is required when sending a request.');
+
+    expect(mockedAppSettingsClient.getAppSettingsObjectByObjectId).not.toHaveBeenCalled();
+    expect(mockedHttpClient.send).not.toHaveBeenCalled();
+  });
+
+  it('throws an error when sendRequest is enabled without a request body template', async () => {
+    mockedQueryClient.queryExecute.mockResolvedValue({
+      state: 'SUCCEEDED',
+      result: buildResult(4),
+    } as any);
+
+    await expect(
+      fetchData({
+        query: 'fetch logs',
+        threshold: 1,
+        comparison: 'GREATER_THAN',
+        sendRequest: true,
+        connectionId: 'connection-42',
+      }),
+    ).rejects.toThrow('A request body template is required when sending a request.');
+
+    expect(mockedAppSettingsClient.getAppSettingsObjectByObjectId).not.toHaveBeenCalled();
+    expect(mockedHttpClient.send).not.toHaveBeenCalled();
+  });
+
   it('does not create a problem when createProblem is false but still returns a triggered result', async () => {
     mockedQueryClient.queryExecute.mockResolvedValue({
       state: 'SUCCEEDED',
@@ -283,5 +344,50 @@ describe('fetch-data action', () => {
       problemEvent: undefined,
     });
     expect(mockedEventsClient.createEvent).not.toHaveBeenCalled();
+  });
+
+  it('sends the HTTP request but skips problem creation when createProblem is false', async () => {
+    mockedQueryClient.queryExecute.mockResolvedValue({
+      state: 'SUCCEEDED',
+      result: buildResult(7),
+    } as any);
+
+    mockedAppSettingsClient.getAppSettingsObjectByObjectId.mockResolvedValue({
+      value: {
+        url: 'https://example.com/hook',
+        token: 'token-456',
+      },
+    } as any);
+
+    mockedHttpClient.send.mockResolvedValue({} as any);
+
+    const result = await fetchData({
+      query: 'fetch logs',
+      threshold: 1,
+      comparison: 'GREATER_THAN',
+      sendRequest: true,
+      connectionId: 'connection-99',
+      requestBodyTemplate: '{"records": {{ recordsCount }}}',
+      createProblem: false,
+    });
+
+    expect(mockedHttpClient.send).toHaveBeenCalledWith({
+      url: 'https://example.com/hook',
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer token-456',
+        'Content-Type': 'application/json',
+      },
+      body: {
+        records: 7,
+      },
+      requestBodyType: 'json',
+    });
+    expect(mockedEventsClient.createEvent).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      recordsCount: 7,
+      triggered: true,
+      problemEvent: undefined,
+    });
   });
 });

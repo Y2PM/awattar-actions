@@ -2,6 +2,31 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import FetchDataWidget from './fetch-data.widget';
 
+type ConnectionPickerProps = {
+  schema?: string;
+  connectionId?: string;
+  onChange: (value: string) => void;
+  dataTestId?: string;
+};
+
+type FetchDataValue = Parameters<typeof FetchDataWidget>[0]['value'];
+
+const renderConnectionPicker = ({ schema, connectionId, onChange, dataTestId }: ConnectionPickerProps) => (
+  <select
+    aria-label="connection-picker"
+    data-testid={dataTestId}
+    data-schema={schema}
+    value={connectionId ?? ''}
+    onChange={(event) => onChange(event.target.value)}
+  >
+    <option value="">Select a connection</option>
+    <option value="connection-1">Connection 1</option>
+    <option value="connection-2">Connection 2</option>
+  </select>
+);
+
+const connectionPickerMock = jest.fn(renderConnectionPicker);
+
 jest.mock('@dynatrace/automation-action-components', () => ({
   AutomationNumberInput: ({ value, onChange }: { value: number | null; onChange: (value: number | null) => void }) => (
     <input
@@ -14,26 +39,7 @@ jest.mock('@dynatrace/automation-action-components', () => ({
       }}
     />
   ),
-  AutomationConnectionPicker: ({
-    connectionId,
-    onChange,
-    dataTestId,
-  }: {
-    connectionId?: string;
-    onChange: (value: string) => void;
-    dataTestId?: string;
-  }) => (
-    <select
-      aria-label="connection-picker"
-      data-testid={dataTestId}
-      value={connectionId ?? ''}
-      onChange={(event) => onChange(event.target.value)}
-    >
-      <option value="">Select a connection</option>
-      <option value="connection-1">Connection 1</option>
-      <option value="connection-2">Connection 2</option>
-    </select>
-  ),
+  AutomationConnectionPicker: (props: ConnectionPickerProps) => connectionPickerMock(props),
   AutomationCodeEditor: ({
     value,
     onChange,
@@ -42,9 +48,7 @@ jest.mock('@dynatrace/automation-action-components', () => ({
     value?: string;
     onChange: (value: string) => void;
     ariaLabel?: string;
-  }) => (
-    <textarea aria-label={ariaLabel ?? 'code-editor'} value={value ?? ''} onChange={(event) => onChange(event.target.value)} />
-  ),
+  }) => <textarea aria-label={ariaLabel ?? 'code-editor'} value={value ?? ''} onChange={(event) => onChange(event.target.value)} />,
   AutomationSelect: ({ value, onChange, children }: { value: string; onChange: (value: string) => void; children: React.ReactNode }) => (
     <select
       aria-label="comparison"
@@ -75,23 +79,20 @@ jest.mock('@dynatrace/strato-components-preview/forms', () => ({
     ({ children }: { children: React.ReactNode }) => <>{children}</>,
     {
       Content: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-      Option: ({ value, children }: { value: string; children: React.ReactNode }) => (
-        <option value={value}>{children}</option>
-      ),
+      Option: ({ value, children }: { value: string; children: React.ReactNode }) => <option value={value}>{children}</option>,
       Trigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     },
   ),
   Checkbox: ({ checked, onChange, 'aria-label': ariaLabel }: { checked?: boolean; onChange: (checked: boolean) => void; 'aria-label'?: string }) => (
-    <input
-      type="checkbox"
-      aria-label={ariaLabel}
-      checked={Boolean(checked)}
-      onChange={(event) => onChange(event.target.checked)}
-    />
+    <input type="checkbox" aria-label={ariaLabel} checked={Boolean(checked)} onChange={(event) => onChange(event.target.checked)} />
   ),
 }));
 
 describe('FetchDataWidget', () => {
+  beforeEach(() => {
+    connectionPickerMock.mockClear();
+  });
+
   it('renders the configured values', () => {
     const onValueChanged = jest.fn();
 
@@ -128,21 +129,30 @@ describe('FetchDataWidget', () => {
     expect(sendRequestToggle.checked).toBe(true);
     expect(connectionPicker.value).toBe('connection-2');
     expect(requestBodyEditor.value).toBe('{ "foo": "bar" }');
+    expect(connectionPickerMock).toHaveBeenCalledWith(expect.objectContaining({ schema: 'fetch-data-connection' }));
   });
 
-  it('updates the value when fields change', () => {
+  it('propagates updates when toggles, connection, and template fields change', () => {
+    const updateValue = jest.fn();
+
     const Wrapper = () => {
-      const [state, setState] = React.useState({
+      const [state, setState] = React.useState<FetchDataValue>({
         query: '',
         comparison: 'GREATER_THAN' as const,
         threshold: 1,
         problemTitle: '',
         createProblem: false,
         sendRequest: false,
-        connectionId: 'connection-1',
+        connectionId: undefined,
         requestBodyTemplate: '',
       });
-      return <FetchDataWidget value={state} onValueChanged={setState} />;
+
+      const handleValueChanged = (next: FetchDataValue) => {
+        updateValue(next);
+        setState(next);
+      };
+
+      return <FetchDataWidget value={state} onValueChanged={handleValueChanged} />;
     };
 
     render(<Wrapper />);
@@ -173,5 +183,19 @@ describe('FetchDataWidget', () => {
     expect(sendRequestToggle.checked).toBe(true);
     expect(connectionPicker.value).toBe('connection-2');
     expect(requestBodyEditor.value).toBe('{ "new": "value" }');
+
+    expect(updateValue).toHaveBeenCalled();
+    const lastCall = updateValue.mock.calls[updateValue.mock.calls.length - 1]?.[0];
+
+    expect(lastCall).toEqual({
+      query: 'fetch logs',
+      comparison: 'LESS_THAN',
+      threshold: 5,
+      problemTitle: 'New problem title',
+      createProblem: true,
+      sendRequest: true,
+      connectionId: 'connection-2',
+      requestBodyTemplate: '{ "new": "value" }',
+    });
   });
 });
