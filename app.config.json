@@ -19,6 +19,10 @@
         "comment": "To read app settings"
       },
       {
+        "name": "app-settings:secrets:read",
+        "comment": "Required to access connection secrets"
+      },
+      {
         "name": "environment-api:events:write",
         "comment": "Required to create custom events from the action"
       }
@@ -29,6 +33,14 @@
         "title": "FetchData",
         "description": "Change description in the app.config.json"
       }
-    ]
+    ],
+    "settings": {
+      "schemas": [
+        {
+          "schemaId": "fetch-data-connection",
+          "file": "settings/schemas/fetch-data.schema.json"
+        }
+      ]
+    }
   }
 }

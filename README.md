@@ -4,6 +4,10 @@ This project was bootstrapped with Dynatrace App Toolkit.
 
 It uses React in combination with TypeScript, to provide great developer experience.
 
+## Connection configuration
+
+The `fetch-data` action requires a connection object based on the schema defined in `settings/schemas/fetch-data.schema.json`. Create a connection in the Automation UI and provide the external API URL (without a trailing slash) together with an access token. The action uses these values when it sends the outbound HTTP request.
+
 ## Available Scripts
 
 In the project directory, you can run:
