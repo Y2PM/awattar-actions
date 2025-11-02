@@ -36,12 +36,10 @@
     ],
     "settings": {
       "schemas": {
-        "fetch-data-connection": {
-          "schemaIds": [
-            "fetch-data-connection"
-          ],
-          "file": "settings/schemas/fetch-data.schema.json"
-        }
+        "name": "Fetch data connection",
+        "schemaIds": [
+          "fetch-data-connection"
+        ]
       }
     }
   }
