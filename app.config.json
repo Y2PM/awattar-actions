@@ -35,15 +35,15 @@
       }
     ],
     "settings": {
-      "schemas": {
-        "fetch-data-connection": {
+      "schemas": [
+        {
           "name": "fetch-data-connection",
           "schemaIds": [
             "fetch-data-connection"
           ],
           "file": "settings/schemas/fetch-data.schema.json"
         }
-      }
+      ]
     }
   }
 }
