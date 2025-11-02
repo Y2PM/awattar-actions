@@ -30,8 +30,8 @@
     "actions": [
       {
         "name": "fetch-data",
-        "title": "FetchData",
-        "description": "Change description in the app.config.json"
+        "title": "Fetch data",
+        "description": "Evaluates a DQL query and optionally creates a problem or sends an HTTP request."
       }
     ],
     "settings": {
