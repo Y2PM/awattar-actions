@@ -2,7 +2,7 @@
   "environmentUrl": "https://tfm90892.sprint.apps.dynatracelabs.com/",
   "app": {
     "name": "awattar-actions",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "A starting project with routing, fetching data, and charting",
     "id": "my.awattar.actions",
     "scopes": [
