@@ -4,7 +4,7 @@
     "value": {
       "name": "My Connection",
       "token": "abc123",
-      "url": "http://foo.bar"
+      "url": "https://foo.bar"
     },
     "summary": "My Connection"
   }
