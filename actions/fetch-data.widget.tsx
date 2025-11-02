@@ -85,7 +85,7 @@ const FetchDataWidget: ActionWidget<FetchDataInput> = (props) => {
         <Label>Create problem</Label>
         <Checkbox
           aria-label="create-problem"
-          checked={createProblem}
+          value={createProblem}
           onChange={(checked) => updateValue({ createProblem: checked })}
         >
           Trigger a problem when the alert condition is met.
@@ -96,7 +96,7 @@ const FetchDataWidget: ActionWidget<FetchDataInput> = (props) => {
         <Label>Send HTTP request</Label>
         <Checkbox
           aria-label="send-request"
-          checked={sendRequest}
+          value={sendRequest}
           onChange={(checked) => updateValue({ sendRequest: checked })}
         >
           Send a POST request when the alert condition is met.
@@ -111,14 +111,14 @@ const FetchDataWidget: ActionWidget<FetchDataInput> = (props) => {
           onChange={(nextConnectionId) =>
             updateValue({ connectionId: nextConnectionId === '' ? undefined : nextConnectionId })
           }
-          dataTestId="connection-picker"
+          data-testid="connection-picker"
         />
         <Hint>Select the credentials and endpoint to use when sending the HTTP request.</Hint>
       </FormField>
       <FormField>
         <Label>Request body template</Label>
         <AutomationCodeEditor
-          ariaLabel="request-body-template"
+          aria-label="request-body-template"
           language="json"
           value={requestBodyTemplate}
           onChange={(nextValue) => updateValue({ requestBodyTemplate: typeof nextValue === 'string' ? nextValue : '' })}

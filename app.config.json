@@ -2,7 +2,7 @@
   "environmentUrl": "https://tfm90892.sprint.apps.dynatracelabs.com/",
   "app": {
     "name": "awattar-actions",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "A starting project with routing, fetching data, and charting",
     "id": "my.awattar.actions",
     "scopes": [
@@ -35,12 +35,11 @@
       }
     ],
     "settings": {
-      "schemas": [
-        {
-          "schemaId": "fetch-data-connection",
+      "schemas": {
+        "fetch-data-connection": {
           "file": "settings/schemas/fetch-data.schema.json"
         }
-      ]
+      }
     }
   }
 }
