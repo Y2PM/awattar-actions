@@ -1,6 +1,6 @@
 {
   "name": "awattar-actions",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A starting project with routing, fetching data, and charting",
   "scripts": {
     "build": "dt-app build",
